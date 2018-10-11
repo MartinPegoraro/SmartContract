@@ -9,7 +9,11 @@ contract Tutoria {
         bool estaConfirmado;
         bool cancelar;
     }
-       mapping (address => tutoriaData) public tutorias;
+    
+    
+       mapping (address => tutoriaData) tutorias;
+    
+    
     
     function solicitarTut (address prof, string mat) public{
        
@@ -33,36 +37,44 @@ contract Tutoria {
     function getProfesor() public view returns(address){
         return tutorias[msg.sender].profesor;
     }
+    
+    
     function getMateria() public view returns(string){
         return tutorias[msg.sender].materia;
     }
+    
     
     function getAlumno() public view returns (address) {
         return tutorias[msg.sender].alumno;
     }
     
-    //function getAlumno(address key) public returns (address) {
-    //    return tutorias[key].alumno;
-    //}
     
-    
-    function confir() public view returns (bool) {
+    function confirTut(address key) public returns (bool) {
         //tutoriaData tut= tutorias
-        require(tutorias[msg.sender].profesor == msg.sender);
+        require(tutorias[key].profesor == msg.sender);
         
-        require(tutorias[msg.sender].estaConfirmado == false);
+        require(tutorias[key].estaConfirmado == false);
         
-        return tutorias[msg.sender].estaConfirmado = true;
+        return tutorias[key].estaConfirmado = true;
     }
     
-    function cancelar() public view returns (bool) {
-        require(tutorias[msg.sender].alumno == msg.sender);
-        require(tutorias[msg.sender].estaConfirmado == false);
-        require(tutorias[msg.sender].cancelar == false);
-        return tutorias[msg.sender].cancelar = true;
+    
+    function cancelarTut(address key) public returns (bool) {
+        require(tutorias[key].alumno == msg.sender);
+        require(tutorias[key].estaConfirmado == false);
+        require(tutorias[key].cancelar == false);
+        return tutorias[key].cancelar = true;
     }
     
-    function estaConfirmado() public view returns (bool){
+    
+    function estaConfirmadoTut() public view returns (bool){
         return tutorias[msg.sender].estaConfirmado;
     }
+    
+    
+     function estaCanceladaTut() public view returns (bool){
+        return tutorias[msg.sender].cancelar;
+     }
+     
+     
 }

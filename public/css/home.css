@@ -1,0 +1,52 @@
+html{
+    box-sizing: border-box;
+}
+*, *::before,*::after{
+    box-sizing: inherit;
+}
+*{
+    margin: 0;
+    padding: 0;
+}
+body{
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    background-image: url('../Images/estudiantes.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+.page{
+    width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+img{
+    margin-top:50px;
+}
+h3{
+    margin-top: 50px;
+    font-weight: bold;
+    color:white;
+    font-size: 20;
+}
+h5{
+    margin-top: 10px;
+    font-size: 30px;
+    color: white;
+}
+.btn {
+    font-size: 21px;
+    line-height: 24px;
+    color: #ffffff;
+    background: #742368;
+    -webkit-border-radius: 50px;
+    -moz-border-radius: 50px;
+    border-radius: 50px;
+    font-weight: 400;
+    padding: 21px 42px 20px 43px;
+    margin-top: 51px;
+    display: inline-block;
+  }
+  .btn:hover {
+    background: #0EA598;
+    color: #fff;
+  }

@@ -1,0 +1,55 @@
+doctype html(lang='en')
+head
+    meta(charset='UTF-8')
+   
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+     
+    meta(http-equiv='X-UA-Compatible', content='ie=edge')
+    script(src="/node_modules/web3/dist/web3.min.js")
+    
+   
+    title Formulario
+
+    link(rel='stylesheet', href='/css/normalize.css')
+    link(rel="stylesheet", href="/css/formulario.css")
+
+  body
+    form(method='POST', action='formulario/respuesta')
+      fieldset.a
+        // Tus Datos
+        legend Tus datos
+    
+        label(for='nombre', class="in") 
+        input#nombre(type='text', name='nombre', placeholder='Nombre', autocomplete='on')
+        br
+        br
+
+      fieldset
+        // Informacion de la Tutoria
+        legend Informacion de la Tutoria
+
+        label(for='materia', class="in")  
+        input#materia(type='text', name='materia', placeholder='Materia', autocomplete='on')
+        br
+        br
+        label(for='profesor', class="in") 
+        input#profesor(type='text', name='profesor', placeholder='Profesor', autocomplete='on')
+
+      fieldset
+        // Fecha y Hora
+        legend Fecha y Hora
+
+        label(for='fecha', class="in") 
+        input#fecha(type='date', name='fecha')        
+        label(for='hora', class="in")   
+        input(type='time', name='Hora', class="in")       
+        br
+        br
+      input(type='submit', value='Enviar' class="boton" )
+      button(onclick='click' type='reset' class="reset" ) Borrar
+      script.
+        var click=click()
+      
+
+
+      

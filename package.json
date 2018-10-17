@@ -1,0 +1,27 @@
+{
+  "name": "smartcontract",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GomezAgustin12/SmartContract.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GomezAgustin12/SmartContract/issues"
+  },
+  "homepage": "https://github.com/GomezAgustin12/SmartContract#readme",
+  "dependencies": {
+    "cookie-parser": "^1.4.3",
+    "jade": "^1.11.0",
+    "morgan": "^1.9.1",
+    "solc": "^0.4.25",
+    "web3": "^1.0.0-beta.36"
+  },
+  "devDependencies": {},
+  "description": ""
+}

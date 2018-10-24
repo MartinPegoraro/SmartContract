@@ -1,194 +1,293 @@
-var createError = require('http-errors');
+var bodyParser = require('body-parser');
 var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var myContract;
-var Web3 = require('web3');
-fs = require('fs')
-solc = require('solc')
-
-var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-
-var abiDefinition = [
-  {
-      "constant": true,
-      "inputs": [],
-      "name": "getProfesor",
-      "outputs": [
-          {
-              "name": "",
-              "type": "address"
-          }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-  },
-  {
-      "constant": true,
-      "inputs": [],
-      "name": "esConfirmado",
-      "outputs": [
-          {
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-  },
-  {
-      "constant": true,
-      "inputs": [],
-      "name": "getMateria",
-      "outputs": [
-          {
-              "name": "",
-              "type": "string"
-          }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-  },
-  {
-      "constant": false,
-      "inputs": [
-          {
-              "name": "_profesor",
-              "type": "address"
-          },
-          {
-              "name": "_materia",
-              "type": "string"
-          }
-      ],
-      "name": "solicitar",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-  },
-  {
-      "constant": true,
-      "inputs": [],
-      "name": "esCancelado",
-      "outputs": [
-          {
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-  },
-  {
-      "constant": false,
-      "inputs": [
-          {
-              "name": "key",
-              "type": "address"
-          }
-      ],
-      "name": "confirmar",
-      "outputs": [
-          {
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-  },
-  {
-      "constant": false,
-      "inputs": [],
-      "name": "cancelar",
-      "outputs": [
-          {
-              "name": "",
-              "type": "uint256"
-          }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-  },
-  {
-      "constant": true,
-      "inputs": [
-          {
-              "name": "key",
-              "type": "address"
-          }
-      ],
-      "name": "getAlumno",
-      "outputs": [
-          {
-              "name": "",
-              "type": "address"
-          }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-  }
-];
-
-var code = fs.readFileSync('./tutoria.sol').toString()
-
-var compiledCode = solc.compile(code)
-
-var byteCode = compiledCode.contracts[':Tutoria'].bytecode //Su contrato inteligente
-
-var TutoriaContract = new web3.eth.Contract(abiDefinition,{data: byteCode, from: web3.eth.accounts[0], gas: 47000}) 
-
-TutoriaContract.deploy({data:byteCode})
-.send({from:'0x2af24ec65db90aa75fc9c918da71e498c6812efe',gas: 1500000, gasPrice: '30000'})
-.then(function(newContractInstance){
-    myContract = newContractInstance});
-
-
-
-var blockchainRouter = require('./routes/blockchain');
-
-
 var app = express();
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(__dirname + '/View'));
+app.use(bodyParser.urlencoded({ extend: true }));
+app.engine('html', require('ejs').renderFile);
+app.set('view engine', 'html');
 
-app.set('view engine', 'jade');
+Web3 = require('web3');
+fs = require('fs')
+solc = require('solc')
+web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+web3.eth.getAccounts(console.log);
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+code = fs.readFileSync('./Script/tutoria.sol').toString()
+compiledCode = solc.compile(code)
 
-app.use('/blockchain', blockchainRouter);
+abiDefinition = JSON.parse(compiledCode.contracts[':Tutoria'].interface) 
+byteCode = compiledCode.contracts[':Tutoria'].bytecode 
 
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+
+let config = {
+  addressContract: null,
+  tutos:[]
+};
+let alumno= {
+  Gonza:[],
+  Facundo:[],
+  Gonsalo:[],
+  Leandro:[],
+  Martin:[],
+  Agustin:[],
+  Sebastian:[]
+}
+
+
+//----------------------Crear Contrato-------------------------------------------------
+  TutoriaContract = new web3.eth.Contract(abiDefinition, { data: byteCode,  from: '0xfd730bab2d10d2179aec947409e2f0c5d1ac5021', gasPrice: '1000', gas: 6721975 });     //-------------------Desplegar Contrato-------------------
+  TutoriaContract.deploy({ data: byteCode }).send({ from: '0xfd730bab2d10d2179aec947409e2f0c5d1ac5021', gas: 6721975, gasPrice: '1000' }).then((e) => {
+    config.addressContract = e.options.address;
+    res.redirect('/');
+  });
+
+
+//------------------------index.html---------------------------------------
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/View/index.html');
+  res.render()
 });
+//---------------------------Solicitar-------------------------------------
+app.post('/', function (req, res) {
+  var prof = ["0x2af24ec65db90aa75fc9c918da71e498c6812efe", "0xb84d66b9aa22c77cb82b756a64dba9e26719b4d7","0xbd7b59c5c01e860150200df323b703228625eff7"];
+  
+  let usuario = req.body.usuario;
+  let materia = req.body.materia;
+  let profesor = req.body.profesor;
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  if ((usuario ==prof[0]) || (usuario ==prof[1]) || (usuario ==prof[2])){
+    res.send('Profesores no pueden solicitar tutorias')
+  }else{
+  //Instancia del Contrato
+    myContract = new web3.eth.Contract(abiDefinition, config.addressContract, { data: byteCode, gasPrice: '1000', gas: 200000 });
+    myContract.methods.solicitar(materia, profesor).send({ from: usuario, gas: 200000 })
+    myContract.methods.solicitar(materia,profesor).call()
+    .then(e => {
+      console.log(e) //Key
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+      config.tutos.push({
+        'alumno': usuario,
+        'materia': materia,
+        'key': e,
+        'profesor': profesor
+      })
+      switch(usuario){
+        case "0xfd730bab2d10d2179aec947409e2f0c5d1ac5021":
+          alumno.Gonza.push({
+            'alumno': usuario,
+            'materia': materia,
+            'key': e,
+            'profesor': profesor
+          })
+          break
+        case "0xcffd857638c1e8e5dcb8df934f6c2d8fd12fea61":
+          alumno.Facundo.push({
+            'alumno': usuario,
+            'materia': materia,
+            'key': e,
+            'profesor': profesor
+          })
+          break
+        case "0xfd8fc5f54264089778fe45d188b1636d9399ce5e":
+          alumno.Gonsalo.push({
+            'alumno': usuario,
+            'materia': materia,
+            'key': e,
+            'profesor': profesor
+          })
+          break
+        case "0xedb0e48927a72e9dc907afd23d9794586acfd149":
+          alumno.Leandro.push({
+            'alumno': usuario,
+            'materia': materia,
+            'key': e,
+            'profesor': profesor
+          })
+          break
+        case "0x95f4c7b52bd3890dd6ab2a488d51414b3b961eca":
+          alumno.Martin.push({
+            'alumno': usuario,
+            'materia': materia,
+            'key': e,
+            'profesor': profesor
+          })
+          break
+        case "0xff7cbcb3bae4b13db50860a023e31f4a0b0bfa46":
+          alumno.Agustin.push({
+            'alumno': usuario,
+            'materia': materia,
+            'key': e,
+            'profesor': profesor
+          })
+          break
+        case "0xbf965026809eeda78bd15e66ed185220fbc44c0b":
+         alumno.Sebastian.push({
+           'alumno': usuario,
+           'materia': materia,
+           'key': e,
+           'profesor': profesor
+         })
+         break
 
+      }
+    })
+  }
+})
+//----------------------Metodos.html---------------------------------------
+app.get('/metodos', function (req, res) {
+  res.sendFile(__dirname + '/View/metodos.html');
+})
 
-module.exports = app;
-module.exports.myContract = myContract;
+//-------------------------METODOS-----------------------------------------
+app.post('/metodos', function (req, res) {
+  let usuario = req.body.usuario;
+  let metodo = req.body.metodo;
+  let opc = req.body.opc;
+  var prof = ["0x2af24ec65db90aa75fc9c918da71e498c6812efe", "0xb84d66b9aa22c77cb82b756a64dba9e26719b4d7","0xbd7b59c5c01e860150200df323b703228625eff7"];
+  var alum = ["0xfd730bab2d10d2179aec947409e2f0c5d1ac5021", "0xcffd857638c1e8e5dcb8df934f6c2d8fd12fea61", "0xfd8fc5f54264089778fe45d188b1636d9399ce5e", "0xedb0e48927a72e9dc907afd23d9794586acfd149", "0x95f4c7b52bd3890dd6ab2a488d51414b3b961eca", "0xff7cbcb3bae4b13db50860a023e31f4a0b0bfa46", "0xbf965026809eeda78bd15e66ed185220fbc44c0b"]
+  switch (metodo) {
+    case "1":
+      myContract.methods.getMateria(usuario).call().then(e => {
+        console.log(e)
+        if ((usuario in prof)){
+          res.send('Profesor no pueden solicitar materia')
+        }
+//        if (e.length < 1){
+//          res.send('Tutoria no encontrada')
+//        }
+        switch(usuario){
+          case "0xfd730bab2d10d2179aec947409e2f0c5d1ac5021":
+            res.json(alumno.Gonza)
+            break
+          case "0xcffd857638c1e8e5dcb8df934f6c2d8fd12fea61":
+            res.json(alumno.Facundo)
+            break
+          case "0xfd8fc5f54264089778fe45d188b1636d9399ce5e":
+            res.json(alumno.Gonsalo)
+            break
+          case "0xedb0e48927a72e9dc907afd23d9794586acfd149":
+          res.json(alumno.Leandro)
+            break
+          case "0x95f4c7b52bd3890dd6ab2a488d51414b3b961eca":
+          res.json(alumno.Martin)
+            break
+          case "0xff7cbcb3bae4b13db50860a023e31f4a0b0bfa46":
+          res.json(alumno.Agustin)
+            break
+          case "0xbf965026809eeda78bd15e66ed185220fbc44c0b":
+          res.json(alumno.Sebastian)
+           break
+        }
+      });
+      break;
+    case "2":
+      myContract.methods.getFecha(usuario).call().then(e => {
+
+        if (e.length < 1)  {
+          res.send('Usuario Invalido')
+        }
+        var respuesta = 'Fecha: ';
+        for (let index = 0; index < e.length; index++) {
+          const a = e[index];
+          respuesta += a.toString();
+        }
+        res.send(respuesta);
+      });
+      break;
+    case "3":
+      
+      myContract.methods.getIdProfesor(usuario).call().then(e => {
+
+        if ((usuario ==prof[0]) || (usuario ==prof[1]) || (usuario ==prof[2])){
+          res.send('Usuario Invalido')
+        }
+        if (e.length < 1){
+          res.send('Sin Tutorias Pendientes')
+        }
+        var respuesta = 'Profesor: ';
+        for (let index = 0; index < e.length; index++) {
+          const a = e[index];
+          respuesta += a.toString();
+        }
+        res.send(respuesta);
+      });
+      break;
+    case "4":
+    
+      myContract.methods.getAlumno(opc).call().then(e => {
+
+        var respuesta = 'Alumno: ';
+        for (let index = 0; index < e.length; index++) {
+          const a = e[index];
+          respuesta += a.toString();
+        }
+        res.send(respuesta);
+      });
+      break;
+    case "5":
+      myContract.methods.confirmar(opc).send({from:usuario, gas:30000}).then(e => {
+        if (e.length < 1) {
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Tutoria Confirmada';
+      //  respuesta += e
+        res.send(respuesta);
+      });
+      break;
+    case "6":
+      myContract.methods.cancelar(usuario).send({from:usuario, gas:30000}).then(e => {
+
+        if ((usuario ==prof[0]) || (usuario==prof[1]) || (usuario ==prof[2])){
+          res.send('Profesores no pueden cancelar tutorias')
+        }
+        if (e.length < 1){
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Tutoria Cancelada';
+
+      //    respuesta += e;
+        res.send(respuesta);
+      });
+      break;
+    case "7":
+      myContract.methods.estaConfirmado(usuario).call().then(e => {
+        if ((usuario ==prof[0]) || (usuario==prof[1]) || (usuario ==prof[2])){
+          res.send('Usuario no valido')
+        }
+        if (e.length < 1) {
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Esta Confirmado: ';
+          respuesta += e;
+
+        res.send(respuesta);
+      });
+      break;
+    case "8":
+      myContract.methods.estaCancelado(usuario).call().then(e => {
+
+        if (e.length < 1) {
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Esta Cancelado: ';
+          respuesta += e;
+        res.send(respuesta);
+      });
+      break;
+    case "9":
+      if (usuario=="0xbd7b59c5c01e860150200df323b703228625eff7"){
+        res.json(config.tutos)
+      }
+  }
+})
+
+//--------------------Mostrar la Blockchain---------------------------------
+app.get('/Blockchain', function(req,res){
+  res.json(config.tutos);
+})
+
+//---------------------Listen 3000------------------------------------------
+app.listen(3000);
+console.log("Running at Port 3000");

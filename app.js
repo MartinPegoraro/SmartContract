@@ -147,7 +147,7 @@ var byteCode = compiledCode.contracts[':Tutoria'].bytecode //Su contrato intelig
 
 var TutoriaContract = new web3.eth.Contract(abiDefinition,{data: byteCode, from: web3.eth.accounts[0], gas: 47000}) 
 
- TutoriaContract.deploy({data:byteCode})
+TutoriaContract.deploy({data:byteCode})
 .send({from:'0x2af24ec65db90aa75fc9c918da71e498c6812efe',gas: 1500000, gasPrice: '30000'})
 .then(function(newContractInstance){
     myContract = newContractInstance});

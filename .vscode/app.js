@@ -1,0 +1,195 @@
+var bodyParser = require('body-parser');
+var express = require('express');
+var app = express();
+
+app.use(express.static(__dirname + '/View'));
+app.use(bodyParser.urlencoded({ extend: true }));
+app.engine('html', require('ejs').renderFile);
+app.set('view engine', 'html');
+
+Web3 = require('web3');
+fs = require('fs')
+solc = require('solc')
+web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+web3.eth.getAccounts(console.log);
+
+code = fs.readFileSync('./Script/tutoria.sol').toString()
+compiledCode = solc.compile(code)
+
+abiDefinition = JSON.parse(compiledCode.contracts[':Tutoria'].interface) 
+byteCode = compiledCode.contracts[':Tutoria'].bytecode 
+
+
+let config = {
+  addressContract: null
+};
+
+//Crear Contrato
+TutoriaContract = new web3.eth.Contract(abiDefinition, { data: byteCode,  from: '0xfd730bab2d10d2179aec947409e2f0c5d1ac5021', gasPrice: '1000', gas: 6721975 });
+//Desplegar Contrato
+TutoriaContract.deploy({ data: byteCode }).send({ from: '0xfd730bab2d10d2179aec947409e2f0c5d1ac5021', gas: 6721975, gasPrice: '1000' }).then((e) => {
+  config.addressContract = e.options.address;
+  res.redirect('/');
+});
+
+
+//index.html
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/View/index.html');
+  res.render()
+});
+//Solicitar
+app.post('/', function (req, res) {
+  var prof = ["0x2af24ec65db90aa75fc9c918da71e498c6812efe", "0xb84d66b9aa22c77cb82b756a64dba9e26719b4d7","0xbd7b59c5c01e860150200df323b703228625eff7"];
+  
+  let usuario = req.body.usuario;
+  let materia = req.body.materia;
+  let profesor = req.body.profesor;
+
+  if ((usuario ==prof[0]) || (usuario ==prof[1]) || (usuario ==prof[2])){
+    res.send('Profesores no pueden solicitar tutorias')
+  }else{
+  //Instancia del Contrato
+    myContract = new web3.eth.Contract(abiDefinition, config.addressContract, { data: byteCode, gasPrice: '1000', gas: 200000 });
+    myContract.methods.solicitar(materia, profesor).send({ from: usuario, gas: 200000 });
+  }
+})
+//Metodos.html
+app.get('/metodos', function (req, res) {
+  res.sendFile(__dirname + '/View/metodos.html');
+})
+
+//METODOS
+app.post('/metodos', function (req, res) {
+  let usuario = req.body.usuario;
+  let metodo = req.body.metodo;
+  let opc = req.body.opc;
+  var prof = ["0x2af24ec65db90aa75fc9c918da71e498c6812efe", "0xb84d66b9aa22c77cb82b756a64dba9e26719b4d7","0xbd7b59c5c01e860150200df323b703228625eff7"];
+  var alum = ["0xfd730bab2d10d2179aec947409e2f0c5d1ac5021", "0xcffd857638c1e8e5dcb8df934f6c2d8fd12fea61", "0xfd8fc5f54264089778fe45d188b1636d9399ce5e", "0xedb0e48927a72e9dc907afd23d9794586acfd149", "0x95f4c7b52bd3890dd6ab2a488d51414b3b961eca", "0xff7cbcb3bae4b13db50860a023e31f4a0b0bfa46", "0xbf965026809eeda78bd15e66ed185220fbc44c0b"]
+  switch (metodo) {
+    case "1":
+      myContract.methods.getMateria(usuario).call().then(e => {
+
+        if ((usuario ==prof[0]) || (usuario ==prof[1]) || (usuario ==prof[2])){
+          res.send('Profesor no pueden solicitar materia')
+        }
+        if (e.length < 1){
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Materia: ';
+        for (let index = 0; index < e.length; index++) {
+          const a = e[index];
+          respuesta += a.toString();
+        }
+        res.send(respuesta);
+      
+      });
+      break;
+    case "2":
+      myContract.methods.getFecha(usuario).call().then(e => {
+
+        if (e.length < 1)  {
+          res.send('Usuario Invalido')
+        }
+        var respuesta = 'Fecha: ';
+        for (let index = 0; index < e.length; index++) {
+          const a = e[index];
+          respuesta += a.toString();
+        }
+        res.send(respuesta);
+      });
+      break;
+    case "3":
+      
+      myContract.methods.getIdProfesor(usuario).call().then(e => {
+
+        if ((usuario ==prof[0]) || (usuario ==prof[1]) || (usuario ==prof[2])){
+          res.send('Usuario Invalido')
+        }
+        if (e.length < 1){
+          res.send('Sin Tutorias Pendientes')
+        }
+        var respuesta = 'Profesor: ';
+        for (let index = 0; index < e.length; index++) {
+          const a = e[index];
+          respuesta += a.toString();
+        }
+        res.send(respuesta);
+      });
+      break;
+    case "4":
+    
+      myContract.methods.getAlumno(opc).call().then(e => {
+
+        var respuesta = 'Alumno: ';
+        for (let index = 0; index < e.length; index++) {
+          const a = e[index];
+          respuesta += a.toString();
+        }
+        res.send(respuesta);
+      });
+      break;
+    case "5":
+      myContract.methods.confirmar(opc).send({from:usuario, gas:30000}).then(e => {
+        if (e.length < 1) {
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Tutoria Confirmada';
+      //  respuesta += e
+        res.send(respuesta);
+      });
+      break;
+    case "6":
+      myContract.methods.cancelar(usuario).send({from:usuario, gas:30000}).then(e => {
+
+        if ((usuario ==prof[0]) || (usuario==prof[1]) || (usuario ==prof[2])){
+          res.send('Profesores no pueden cancelar tutorias')
+        }
+        if (e.length < 1){
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Tutoria Cancelada';
+
+      //    respuesta += e;
+        res.send(respuesta);
+      });
+      break;
+    case "7":
+      myContract.methods.estaConfirmado(usuario).call().then(e => {
+        if ((usuario ==prof[0]) || (usuario==prof[1]) || (usuario ==prof[2])){
+          res.send('Usuario no valido')
+        }
+        if (e.length < 1) {
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Esta Confirmado: ';
+          respuesta += e;
+
+        res.send(respuesta);
+      });
+      break;
+    case "8":
+      myContract.methods.estaCancelado(usuario).call().then(e => {
+
+        if (e.length < 1) {
+          res.send('Tutoria no encontrada')
+        }
+        var respuesta = 'Esta Cancelado: ';
+          respuesta += e;
+        res.send(respuesta);
+      });
+      break;
+  }
+})
+
+
+app.listen(3000);
+
+console.log("Running at Port 3000");
+
+
+
+
+
+
+
